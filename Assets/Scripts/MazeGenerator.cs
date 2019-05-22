@@ -22,8 +22,6 @@ public class MazeGenerator {
 
     private MazeCell[,] _map;
 
-    public MazeCell[,] Map => _map;
-
     private void InitializeMap() {
         _map = new MazeCell[Height, Width];
         for (int row = 0; row < Height; ++row)
@@ -75,18 +73,6 @@ public class MazeGenerator {
         return GetNeighbors(p).Where(_p => !_map[_p.Row, _p.Col].Visited);
     }
 
-    private List<Pair<PairRowCol, PairRowCol>> _edges;
-
-    public List<Pair<PairRowCol, PairRowCol>> Edges => _edges;
-
-    private void InitializeEdges() {
-        _edges = new List<Pair<PairRowCol, PairRowCol>>();
-    }
-
-    private void ClearEdges() {
-        _edges.Clear();
-    }
-
     private void Connect(PairRowCol p1, PairRowCol p2) {
         if (p1.Row == p2.Row)
             if (p1.Col < p2.Col) {
@@ -109,9 +95,6 @@ public class MazeGenerator {
     public void Generate() {
         InitializeMap();
         ClearMap();
-
-        InitializeEdges();
-        ClearEdges();
 
         Stack<PairRowCol> st = new Stack<PairRowCol>();
         System.Random rng = new System.Random();
