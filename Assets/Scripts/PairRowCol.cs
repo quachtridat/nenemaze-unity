@@ -1,37 +1,14 @@
-﻿using System;
+﻿public class PairRowCol : Pair<int, int> {
+    public int Row { get => First; set => First = value; }
+    public int Col { get => Second; set => Second = value; }
 
-public struct PairRowCol : IEquatable<PairRowCol> {
-    public int Row { get; set; }
-    public int Col { get; set; }
+    public PairRowCol() : base() { }
 
-    public static PairRowCol Create(int row, int col) {
-        return new PairRowCol { Row = row, Col = col };
-    }
+    public PairRowCol(PairRowCol p) : base(p as Pair<int, int>) { }
 
+    public PairRowCol(int row, int col) : base(row, col) { }
 
-    public bool Equals(PairRowCol p) {
-        return Row == p.Row && Col == p.Col;
-    }
-
-    public static bool operator ==(PairRowCol p1, PairRowCol p2) {
-        return p1.Equals(p2);
-    }
-
-    public static bool operator !=(PairRowCol p1, PairRowCol p2) {
-        return !p1.Equals(p2);
-    }
-
-    public override bool Equals(object obj) {
-        if (obj is null) return false;
-        if (obj is PairRowCol) return Equals((PairRowCol)obj);
-        return base.Equals(obj);
-    }
-
-    public override int GetHashCode() {
-        return Tuple.Create(Row, Col).GetHashCode();
-    }
-
-    public override string ToString() {
-        return String.Format("({0}, {1})", Row, Col);
+    public new static PairRowCol Create(int row, int col) {
+        return new PairRowCol(row, col);
     }
 }

@@ -11,22 +11,30 @@ public class GameManager : MonoBehaviour {
     [Header("Maze Walls")]
 
     [SerializeField]
-    private GameObject _horizontalWallPrefab;
+    GameObject _horizontalWallPrefab;
     [SerializeField]
-    private GameObject _verticalWallPrefab;
+    GameObject _verticalWallPrefab;
     [SerializeField]
-    private GameObject _wallParent;
+    GameObject _wallParent;
 
     [Header("Maze Balls")]
     [SerializeField]
-    private GameObject _ballPrefab;
+    GameObject _ballPrefab;
     [SerializeField]
-    private GameObject _ballParent;
+    GameObject _ballParent;
     public int InitialBallHeight;
 
-    [Header("Misc.")]
+    [Header("Maze Objects")]
+    [SerializeField]
+    GameObject _objectsParent;
+    [SerializeField]
+    GameObject _winningSpotPrefab;
 
+    [Header("Misc.")]
     MazeGenerator _mg;
+    Vector3 _winPos;
+    [SerializeField]
+    bool _debug;
 
     void Awake() {
         _mg = new MazeGenerator();
@@ -75,26 +83,64 @@ public class GameManager : MonoBehaviour {
         }
 
         {
-            PairRowCol ballPos;
-            int iterCnt = 0;
-            int iterMax = MazeRows * MazeColumns;
+            var ballPos = GetRandomNonBlockedCell();
+            var ballLocalPos = CellToLocal(ballPos);
 
-            do {
-                ballPos = PairRowCol.Create(Random.Range(0, MazeRows), Random.Range(0, MazeColumns));
-            } while (iterCnt++ < iterMax && _mg.GetCell(ballPos).WallState.HasFlag(MazeGenerator.MazeCell.WallStates.All));
+            SpawnBall(CellToLocal(ballPos) + new Vector3(0, InitialBallHeight, 0));
 
-            SpawnBall(new Vector3(ballPos.Col - halfWidth + 0.5f, InitialBallHeight, ballPos.Row - halfHeight + 0.5f));
+            PairRowCol winPos = PairRowCol.Create(0, 0);
+            var dist = (CellToLocal(winPos) - ballLocalPos).sqrMagnitude;
+            for (int row = 0; row < MazeRows; ++row)
+                for (int col = 0; col < MazeColumns; ++col) {
+                    PairRowCol pos = PairRowCol.Create(row, col);
+                    if (_mg.GetCell(pos).WallState.HasFlag(MazeGenerator.MazeCell.WallStates.All)) continue;
+                    var d = (CellToLocal(pos) - ballLocalPos).sqrMagnitude;
+                    if (d > dist) {
+                        dist = d;
+                        winPos = pos;
+                    }
+                }
+
+            if (_debug)
+                SpawnWinningSpot(CellToLocal(PairRowCol.Create(ballPos.Row, ballPos.Col - 1)) + new Vector3(0, _winningSpotPrefab.transform.localScale.y / 2, 0));
+            else
+                SpawnWinningSpot(CellToLocal(winPos) + new Vector3(0, _winningSpotPrefab.transform.localScale.y / 2, 0));
         }
     }
 
     // Update is called once per frame
     void Update() {
-
+        if (WinBlock.BallCollided) {
+            Debug.Log("You Won!");
+            UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
+        }
     }
 
-    void SpawnBall(Vector3 pos) {
+    PairRowCol GetRandomNonBlockedCell(int nRandom = 1) {
+        PairRowCol pos = PairRowCol.Create(0, 0);
+        int iterCnt = 0;
+
+        do {
+            pos.Row = Random.Range(0, MazeRows);
+            pos.Col = Random.Range(0, MazeColumns);
+        } while (iterCnt++ < nRandom && _mg.GetCell(pos).WallState.HasFlag(MazeGenerator.MazeCell.WallStates.All));
+
+        return pos;
+    }
+
+    Vector3 CellToLocal(PairRowCol p) {
+        return new Vector3(p.Col - MazeColumns / 2f + 0.5f, 0, p.Row - MazeRows / 2f + 0.5f);
+    }
+
+    void SpawnBall(Vector3 pos, string name = null) {
         GameObject g = Instantiate(_ballPrefab, _ballParent is null ? this.transform : _ballParent.transform);
-        g.name = $"Ball";
+        g.name = name is null ? "Ball" : name;
+        g.transform.position = pos;
+    }
+
+    void SpawnWinningSpot(Vector3 pos, string name = null) {
+        GameObject g = Instantiate(_winningSpotPrefab, _objectsParent is null ? this.transform : _objectsParent.transform);
+        g.name = name is null ? "Winning Spot" : name;
         g.transform.position = pos;
     }
 }
